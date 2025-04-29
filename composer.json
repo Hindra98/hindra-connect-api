@@ -1,9 +1,5 @@
 {
   "require": {
-    "ext-json": "*",
-    "ext-pdo": "*",
-    "ext-openssl": "*",
-    "ext-gd": "*",
     "zircote/swagger-php": "^5.0",
     "slim/slim": "^4.14",
     "slim/http": "^1.4",

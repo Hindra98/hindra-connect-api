@@ -30,6 +30,7 @@ class CorsMiddleware
   {
     // Liste des origines autorisées (ajoutez vos URLs de développement/production)
     $allowedOrigins = [
+      '*',
       'http://localhost:5173',        // React en développement
       'http://192.168.137.154:5173',        // React en développement
       'http://192.168.137.4:5173',        // React en développement
