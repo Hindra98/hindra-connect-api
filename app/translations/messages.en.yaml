@@ -1,0 +1,10 @@
+# translations/messages.en.yaml
+welcome_title: "Welcome, %name%!"
+welcome_message: "Thank you for signing up with the email %email% on %date%."
+send_otp_title: "Register to our exchange prestation application !"
+send_otp_message: "Your OTP code is : %otp%."
+reset_password_title: "Reset Your Password"
+reset_password_message: "Click this link to reset your password:"
+verify_email_title: "Verify your account"
+verify_email_message: "Click this link to verify your account:"
+footer_message: "Best regards, the support team."

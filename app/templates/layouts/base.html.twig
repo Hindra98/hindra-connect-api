@@ -1,0 +1,52 @@
+{# templates/layouts/base.html.twig #}
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>{{ subject }}</title>
+		<style>
+			{% if theme == 'dark' %}
+				body {
+					background-color: #333;
+					color: #eee;
+				}
+				a {
+					color: #55b;
+				}
+				footer {
+					background-color: #555;
+					color: #ccc;
+				}
+			{% else %}
+				body {
+					background-color: #eee;
+					color: #333;
+				}
+				footer {
+					background-color: #ccc;
+					color: #555;
+				}
+			{% endif %}
+			footer {
+				width: 100%;
+				padding: 10px 0;
+				display: flex;
+				justify-content: center;
+				flex-direction: column;
+				align-items: center;
+				gap: 3;
+			}
+		</style>
+	</head>
+	<body>
+		{% block content %}{% endblock %}
+		<footer>
+			<p>{{ 'footer_message'|trans }}</p>
+			<p>&copy;
+				{{ year }}
+				- hindra98</p>
+		</footer>
+	</body>
+</html>

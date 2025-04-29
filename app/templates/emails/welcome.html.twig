@@ -1,0 +1,7 @@
+{# templates/emails/welcome.html.twig #}
+{% extends 'layouts/base.html.twig' %}
+
+{% block content %}
+	<h1>{{ 'welcome_title'|trans({'%name%': user.email}) }}</h1>
+	<p>{{ 'welcome_message'|trans({'%email%': user.email, '%date%': user.date}) }}</p>
+{% endblock %}

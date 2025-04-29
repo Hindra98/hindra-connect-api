@@ -1,0 +1,7 @@
+{# templates/emails/send_otp.html.twig #}
+{% extends 'layouts/base.html.twig' %}
+
+{% block content %}
+	<h1>{{ 'send_otp_title'|trans }}</h1>
+	<p>{{ 'send_otp_message'|trans({'%otp%': otp}) }}</p>
+{% endblock %}
