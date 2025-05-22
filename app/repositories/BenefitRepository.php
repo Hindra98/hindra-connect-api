@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Config\Database;
 use App\Models\Benefit;
+use DateTime;
 
 class BenefitRepository
 {
@@ -20,9 +21,8 @@ class BenefitRepository
   {
     $query = "SELECT * FROM \"$this->table\"";
     $stmt = $this->pdo->query($query);
-    $results = $stmt->fetchAll()?:null;
-    return $results;
-    // return array_map(fn($row)=> new Benefit($row), $results);
+    $results = $stmt->fetchAll() ?: null;
+    return $results == null ? [] : array_map(fn($row) => new Benefit($row), $results);
   }
 
   public function getById($id)
@@ -31,7 +31,7 @@ class BenefitRepository
     $stmt = $this->pdo->prepare($query);
     $stmt->bindParam(":id", $id);
     $stmt->execute();
-    $result = $stmt->fetch()?:null;
+    $result = $stmt->fetch() ?: null;
     return $result ? new Benefit($result) : null;
   }
 
@@ -41,8 +41,8 @@ class BenefitRepository
     $stmt = $this->pdo->prepare($query);
     $stmt->bindParam(":title", $title);
     $stmt->execute();
-    $results = $stmt->fetch()?:null;
-    return array_map(fn($row)=> new Benefit($row), $results);
+    $results = $stmt->fetchAll() ?: null;
+    return $results == null ? [] : array_map(fn($row) => new Benefit($row), $results);
   }
 
   public function create(Benefit $benefit)
@@ -57,7 +57,7 @@ class BenefitRepository
     $stmt->bindParam(":price", $benefit->price);
     $stmt->bindParam(":location", $benefit->location);
     $stmt->bindParam(":category_id", $benefit->category_id);
-    $stmt->bindParam(":availability ", $benefit->availability );
+    $stmt->bindParam(":availability ", $benefit->availability);
 
     if ($stmt->execute()) {
       return true;
@@ -67,7 +67,7 @@ class BenefitRepository
 
   public function update(Benefit $benefit)
   {
-    $query = "UPDATE \"$this->table\" SET title = :title, description = :description, price = :price, location = :location, category_id = :category_id, availability = :availability WHERE id = :id";
+    $query = "UPDATE \"$this->table\" SET title = :title, description = :description, price = :price, location = :location, category_id = :category_id, availability = :availability, updated_at = :updated_at WHERE id = :id";
     $stmt = $this->pdo->prepare($query);
 
     $stmt->bindParam(":id", $benefit->id);
@@ -76,7 +76,44 @@ class BenefitRepository
     $stmt->bindParam(":price", $benefit->price);
     $stmt->bindParam(":location", $benefit->location);
     $stmt->bindParam(":category_id", $benefit->category_id);
-    $stmt->bindParam(":availability ", $benefit->availability );
+    $stmt->bindParam(":availability ", $benefit->availability);
+    $stmt->bindParam(":updated_at", ((new DateTime())->__serialize())['date']);
+
+
+    if ($stmt->execute()) {
+      return true;
+    }
+    return false;
+  }
+
+  public function updateBenefitTitle($id,$title,$description,$price)
+  {
+    $query = "UPDATE \"$this->table\" SET title = :title, description = :description, price = :price, updated_at = :updated_at WHERE id = :id";
+    $stmt = $this->pdo->prepare($query);
+
+    $stmt->bindParam(":id", $id);
+    $stmt->bindParam(":title", $title);
+    $stmt->bindParam(":description", $description);
+    $stmt->bindParam(":price", $price);
+    $stmt->bindParam(":updated_at", ((new DateTime())->__serialize())['date']);
+
+
+    if ($stmt->execute()) {
+      return true;
+    }
+    return false;
+  }
+
+  public function updateBenefitCategory($id,$location,$category_id,$availability)
+  {
+    $query = "UPDATE \"$this->table\" SET location = :location, category_id = :category_id, availability = :availability, updated_at = :updated_at WHERE id = :id";
+    $stmt = $this->pdo->prepare($query);
+
+    $stmt->bindParam(":id", $id);
+    $stmt->bindParam(":location", $location);
+    $stmt->bindParam(":category_id", $category_id);
+    $stmt->bindParam(":availability ", $availability);
+    $stmt->bindParam(":updated_at", ((new DateTime())->__serialize())['date']);
 
 
     if ($stmt->execute()) {

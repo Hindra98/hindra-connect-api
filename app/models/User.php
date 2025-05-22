@@ -11,6 +11,7 @@ class User
   public ?int $is_verify_2fa;
   public ?int $is_connected;
   public ?string $created_at;
+  public ?string $updated_at;
   public ?string $role; // "USER", "ADMIN"
   public ?string $otp; // Champ pour stocker le code de double authentification
 

@@ -17,6 +17,7 @@ $dotenv->load();
 
 (require __DIR__ . '/app/routes/index.php')($app);
 require __DIR__ . '/app/core/constants/auth-constants.php';
+require __DIR__ . '/app/core/constants/core-constants.php';
 
 // Erreur Middleware (A supprimer)
 // $errorMiddleware = $app->addErrorMiddleware(true, true, true);

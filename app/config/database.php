@@ -18,16 +18,16 @@ class Database
     // $password = "";
 
     // Configuration Locale pour PostgreSQL
-    // $host = "localhost";
-    // $db_name = "hindra-exchange";
-    // $username = "postgres";
-    // $password = "admin";
+    $host = "localhost";
+    $db_name = "hindra-exchange";
+    $username = "postgres";
+    $password = "admin";
 
     // Configuration Production pour Heroku PostgreSQL
-    $host = $_ENV['DB_HOST']?? "localhost";
-    $db_name = $_ENV['DB_NAME']?? "hindra-exchange";
-    $username = $_ENV['DB_USER']?? "postgres";
-    $password = $_ENV['DB_PASSWORD']?? "admin";
+    // $host = $_ENV['DB_HOST']?? "localhost";
+    // $db_name = $_ENV['DB_NAME']?? "hindra-exchange";
+    // $username = $_ENV['DB_USER']?? "postgres";
+    // $password = $_ENV['DB_PASSWORD']?? "admin";
 
     try {
       // $this->pdo = new PDO("mysql:host=$host;dbname=$db_name;charset=utf8", $username, $password, [

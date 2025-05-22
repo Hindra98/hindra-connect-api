@@ -8,8 +8,10 @@ use App\Core\Services\SecurePassword;
 use App\Core\Services\ValidateService;
 use App\Core\Utils\JWTCore;
 use App\Core\Utils\ResponseFormatter;
+use App\Models\Params;
 use App\Models\Profile;
 use App\Models\User;
+use App\Repositories\ParamsRepository;
 use App\Repositories\ProfileRepository;
 use App\Repositories\UserRepository;
 use League\OAuth2\Client\Provider\Google;
@@ -98,6 +100,8 @@ class AuthController
     $firstName = $parsedBody['firstName'] ?? "";
     $password = $parsedBody['password'] ?? "";
     $confirmPassword = $parsedBody['confirmPassword'] ?? "";
+    $userlanguage = $parsedBody['userlanguage'] ?? "fr";
+    $theme = $parsedBody['theme'] ?? "system";
 
     if ($confirmPassword != $password) array_push($error, "Le mot de passe et la confirmation sont differents");
 
@@ -111,13 +115,23 @@ class AuthController
     if (count($error) == 0) {
       $id = uniqid();
       $hashPassword = (new SecurePassword())->hashPassword($password);
-      $data = ['id' => $id, 'email' => $email, 'password' => $hashPassword, 'is_verify_2fa' => $is_verify_2fa];
+      $data = ['id' => $id, 'email' => $email, 'password' => $hashPassword, 'is_verify_2fa' => $is_verify_2fa == 1];
       $user = new User($data);
       $createUser = $this->userModel->create($user);
       switch ($createUser) {
         case 0: // Erreur survenue lors de la creation
           array_push($error, "Une erreur est survenue lors de la creation de cet utilisateur");
+          break;
         case 1: // Ok
+
+          // Insertion des parametres de langue et de mode (theme)
+          $paramsModel = new ParamsRepository();
+          $paramsId = uniqid();
+          $dataParams = ['id' => $paramsId, 'user_id' => $user->id, 'userlanguage' => $userlanguage, 'theme' => $theme];
+          $params = new Params($dataParams);
+          $createParams = $paramsModel->create($params);
+
+          // Insertion du profil utilisateur
           $profileModel = new ProfileRepository();
           $profileId = uniqid();
           $dataProfile = ['id' => $profileId, 'user_id' => $user->id, 'lastname' => $lastName, 'firstname' => $firstName];
@@ -133,12 +147,14 @@ class AuthController
 
           $message_email = "token=$accessToken&otp=$otp";
 
-          $send_mail = EmailService::send($user, "Inscription sur Hindra-Connect - Lien de vérification",  $message_email, EMAIL_RENDER_VERIFY_EMAIL, $profile->userlanguage);
+          $send_mail = EmailService::send($user, "Inscription sur Hindra-Connect - Lien de vérification",  $message_email, EMAIL_RENDER_VERIFY_EMAIL, $params->userlanguage);
 
           $status = 201;
-          $payload = ["message" => $createProfile ? "Utilisateur enregistre | " . $send_mail["message_email"] : "Toutes vos données n'ont pas été enregistrés, vous le ferez manuellement plutard"];
+          $payload = ["message" => ($createProfile && $createParams) ? "Utilisateur enregistre | " . $send_mail["message_email"] : "Toutes vos données n'ont pas été enregistrés, vous le ferez manuellement plutard"];
+          break;
         case 2: // Doublon d'adresse e-mail
           array_push($error, "Cette adresse e-mail est deja utilise");
+          break;
         default:
       }
     }
@@ -156,28 +172,74 @@ class AuthController
     $payload = null;
 
     if ($otp == '') array_push($error, "Vous devez renseigner le code envoye par mail");
-    if ($token == '' || $id == '') array_push($error, "Echec de connexion! Reessayez de vous connecter!");
+    if ($token == '' || $id == '') array_push($error, "Echec de connexion::Identifiants manquants! Reessayez de vous connecter!");
 
 
     $payload = ["message" => ""];
     if (count($error) == 0) {
       $jwtCore = new JWTCore();
       $decoded = $jwtCore->decodeToken($token);
-      if (!$decoded) return ResponseFormatter::format($response, 401, ["Echec de connexion! Reessayez de vous connecter!"], $payload);
+      if ($decoded == null) return ResponseFormatter::format($response, 401, ["Echec de connexion::Identifiants invalides! Reessayez de vous connecter!"], $payload);
 
       $user = $this->userModel->getById($id);
-      // var_dump($decoded);
-      if (!$user || $id != $decoded->id) return ResponseFormatter::format($response, 401, ["Echec de connexion! Reessayez de vous connecter!"], $payload);
+      if ($user == null || $id != $decoded->id) return ResponseFormatter::format($response, 401, ["Echec de connexion! Reessayez de vous connecter!"], $payload);
       if (!$this->userModel->verifyOTP($user->id, $otp)) return ResponseFormatter::format($response, 401, ["Code pin errone"], $payload);
 
 
-      $data = ['id' => $user->id, 'email' => $user->email, 'is_verified' => $user->is_verified, 'is_verify_2fa' => $user->is_verify_2fa, 'is_connected' => true, 'role' => $user->role];
+      $data = ['id' => $user->id, 'email' => $user->email, 'is_verified' => $user->is_verified == 1, 'is_verify_2fa' => $user->is_verify_2fa == 1, 'is_connected' => true, 'role' => $user->role];
       $accessToken = $jwtCore->generateTokenWithClaims($user, 900); // 15 min
       $refreshToken = $jwtCore->generateTokenWithClaims($user, 604800); // 7 jours
       $payload = ['token' => $accessToken, 'refresh_token' => $refreshToken, "message" => "Authentification reussie"];
       $payload = array_merge($payload, $data);
       return ResponseFormatter::format($response, 200, [], $payload)
         ->withHeader('Set-Cookie', "refresh_token={$refreshToken}; HttpOnly; Secure; SameSite=Strict");
+    }
+    return ResponseFormatter::format($response, $status, $error, $payload);
+  }
+
+  public function resendPinCode(Request $request, Response $response)
+  {
+    $params = $request->getParsedBody();
+    $id = $params['id'] ?? "";
+    $email = $params['email'] ?? "";
+    $token = $params['token'] ?? "";
+    $type = $params['type'] ?? 0;
+    $error = [];
+    $status = 401;
+    $payload = null;
+
+    if ($token == '' || $id == '' || $email == '') array_push($error, "Identifiants manquants! Reessayez de vous connecter!");
+
+    $payload = ["message" => ""];
+    if (count($error) == 0) {
+      $jwtCore = new JWTCore();
+      $decoded = $jwtCore->decodeToken($token);
+      if ($decoded == null) return ResponseFormatter::format($response, 401, ["Identifiants invalides! Reessayez de vous connecter!"], $payload);
+
+      $user = $this->userModel->getById($id);
+      if ($user == null || $id != $decoded->id || $email != $decoded->email) return ResponseFormatter::format($response, 401, ["Echec de connexion! Reessayez de vous connecter!"], $payload);
+
+      $otp = rand(100000, 999999); // Génère un code à 6 chiffres
+      $this->userModel->updateOTP($user->id, $otp);
+      $send_mail = EmailService::send($user, "Votre code de vérification",  $otp, EMAIL_RENDER_SEND_OTP);
+      $data = ['id' => $user->id, 'email' => $user->email];
+
+      if ($type === 1) {
+        $accessToken = $jwtCore->generateTokenWithClaims($user, 900); // 15 min
+        $refreshToken = $jwtCore->generateTokenWithClaims($user, 604800); // 7 jours
+        $payload = ['token' => $accessToken, 'refresh_token' => $refreshToken, "message" => "Code pin renvoyé"];
+        $payload = array_merge($payload, $send_mail);
+        $payload = array_merge($payload, $data);
+        return ResponseFormatter::format($response, 200, [], $payload)
+          ->withHeader('Set-Cookie', "refresh_token={$refreshToken}; HttpOnly; Secure; SameSite=Strict");
+      }
+
+      $accessToken = $jwtCore->generateToken($data, 900); // 15 min
+      $refreshToken = $jwtCore->generateToken($data, 604800); // 7 jours
+      $payload = ['token' => $accessToken, 'refresh_token' => $refreshToken, "message" => "Code pin renvoyé"];
+      $payload = array_merge($payload, $send_mail);
+      $payload = array_merge($payload, $data);
+      $status = 200;
     }
     return ResponseFormatter::format($response, $status, $error, $payload);
   }
@@ -274,6 +336,23 @@ class AuthController
       $this->userModel->updatePassword($user->id, $hashPassword);
       $payload = ["message" => "Mot de passe modifié! Connectez-vous!"];
       $this->userModel->updateOTP($user->id, "");
+      return ResponseFormatter::format($response, 200, [], $payload);
+    }
+  }
+
+  public function signOut(Request $request, Response $response)
+  {
+    $params = $request->getHeader("Authorization");
+    $token = $params[0] ?? "";
+    $payload = ["message" => ""];
+    $jwtCore = new JWTCore();
+    $decoded = $jwtCore->decodeToken($token);
+    if (!$decoded) return ResponseFormatter::format($response, 401, ["Jeton expiré"], $payload);
+
+    $handleChangeUserConnected = $this->userModel->updateUserConnected($decoded->id, false);
+    if (!$handleChangeUserConnected) return ResponseFormatter::format($response, 401, ["Erreur lors de la deconnexion"], $payload);
+    else {
+      $payload = ["message" => "Vous etes a present deconnectes !"];
       return ResponseFormatter::format($response, 200, [], $payload);
     }
   }

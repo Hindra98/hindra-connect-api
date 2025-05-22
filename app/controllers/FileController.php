@@ -1,126 +1,105 @@
 <?php
+
 namespace App\Controllers;
 
-use App\Models\File;
-use Intervention\Image\ImageManager;
-use League\Flysystem\Filesystem;
+use App\Config\LoggerApi;
+use App\Core\Services\FileUploader;
+use App\Core\Utils\JWTCore;
+use App\Core\Utils\ResponseFormatter;
+use App\Repositories\ProfileRepository;
+use App\Repositories\UserRepository;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use Slim\Psr7\Factory\StreamFactory;
 
 class FileController
 {
-    private $storage;
-    private $db;
-    private $imageManager;
+  private $streamFactory;
 
-    public function __construct(Filesystem $storage, \PDO $db)
-    {
-        $this->storage = $storage;
-        $this->db = $db;
-        $this->imageManager = new ImageManager(['driver' => 'gd']);
+  private $profileModel;
+  private $userModel;
+  private $logger;
+
+  public function __construct()
+  {
+    $this->profileModel = new ProfileRepository();
+    $this->userModel = new UserRepository();
+    $this->logger = new LoggerApi();
+    $this->streamFactory = new StreamFactory();
+  }
+
+  public function updatePicture(Request $request, Response $response, $_)
+  {
+
+    $error = [];
+    $status = 500;
+    $payload = ["message" => ""];
+    $jwtCore = new JWTCore();
+
+    $header = $request->getHeader('Authorization');
+    if (empty($header)) {
+      $this->logger->getError($request);
+      return ResponseFormatter::error($response, 401, ["Token manquant"]);
     }
 
-    public function upload(Request $request, Response $response): Response
-    {
-        $userId = $request->getAttribute('userId');
-        $uploadedFiles = $request->getUploadedFiles();
-        $data = $request->getParsedBody();
+    $decoded = $jwtCore->decodeToken($header[0]);
+    if ($decoded == null) return ResponseFormatter::format($response, 401, ["Identifiants invalides! Reessayez de vous connecter!"], $payload);
 
-        if (empty($uploadedFiles['file'])) {
-            return $this->errorResponse($response, 'Aucun fichier uploadé', 400);
-        }
+    $id = $decoded->userId;
+    $user = $this->userModel->getById($id);
+    if ($user == null) return ResponseFormatter::format($response, 401, ["Token d'authentification compromis! Reessayez de vous connecter!"], $payload);
 
-        $file = $uploadedFiles['file'];
-        $fileType = $data['file_type'] ?? '';
+    $uploadedFiles = $request->getUploadedFiles();
+    $parsedBody = $request->getParsedBody();
 
-        // Validation
-        if (!in_array($fileType, ['profile', 'service'])) {
-            return $this->errorResponse($response, 'Type de fichier invalide', 400);
-        }
 
-        // Traitement du fichier
-        try {
-            $stream = $file->getStream();
-            $mimeType = $file->getClientMediaType();
-            $extension = pathinfo($file->getClientFilename(), PATHINFO_EXTENSION);
-            $filename = uniqid() . '.' . $extension;
-            $directory = $fileType . 's/'; // profiles/ ou services/
+    $photoFile = $uploadedFiles['picture'];
+    $fileType = $parsedBody['destination'] ?? '';
 
-            // Optimisation de l'image si c'est une image
-            if (strpos($mimeType, 'image/') === 0) {
-                $image = $this->imageManager->make($stream);
-                $image->resize(1200, null, function ($constraint) {
-                    $constraint->aspectRatio();
-                    $constraint->upsize();
-                });
-                $stream = $image->stream()->detach();
-            }
+    if (empty($uploadedFiles['picture'])) array_push($error, "Aucun fichier uploadé");
+    if (!in_array($fileType, ['profile', 'benefit'])) array_push($error, "Une erreur est survenue lors de la modification de votre profil");
 
-            // Sauvegarde du fichier
-            $this->storage->writeStream(
-                $directory . $filename,
-                $stream
-            );
+    if (count($error) == 0) {
+      $fileUploader = new FileUploader();
+      $profile = $this->profileModel->getByUser($user->id);
 
-            // Enregistrement en base
-            $fileModel = new File($this->db);
-            $fileId = $fileModel->create([
-                'user_id' => $userId,
-                'path' => $directory . $filename,
-                'type' => $fileType,
-                'original_name' => $file->getClientFilename(),
-                'mime_type' => $mimeType,
-                'size' => $file->getSize()
-            ]);
+      try {
+        $fileName = 'HC-'.$id.'-'.$fileType[0].'-'.uniqid();
+        $extension = pathinfo($photoFile->getClientFilename(), PATHINFO_EXTENSION);
+        $fileName = $fileName . '.' . $extension;
+        $directory = PICTURES_REPOSITORY.$fileType.'s'; // profiles/ ou benefits/
+        $directory = $directory . DIRECTORY_SEPARATOR . $fileName;
 
-            return $this->successResponse($response, [
-                'id' => $fileId,
-                'path' => "/files/{$fileId}",
-                'type' => $fileType
-            ]);
-        } catch (\Exception $e) {
-            return $this->errorResponse($response, 'Erreur lors du traitement du fichier', 500);
-        }
+        $picture = $fileUploader->upload($photoFile, $directory, $id.'-'.$fileType[0]);
+        $data = ['picture' => $picture];
+        $updateProfileUser = $this->profileModel->updatePicture($profile->id, $picture);
+        
+        if ($updateProfileUser) {
+          $accessToken = $jwtCore->generateTokenWithClaims($user, 900); // 15 min
+          $payload = ['token' => $accessToken, "message" => "Photo de profil modifiée avec succès"];
+          $payload = array_merge($payload, $data);
+          $status = 200;
+        } else array_push($error, "Erreur lors de la modification de votre photo de profil");
+        return ResponseFormatter::format($response, $status, $error, $payload);
+      } catch (\Exception $e) {
+        return ResponseFormatter::format($response, 500, ["Erreur lors du traitement du fichier: " . $e], $payload);
+      }
+    } else $status = 401;
+    return ResponseFormatter::format($response, $status, $error, $payload);
+  }
+
+  public function getFile(Request $_, Response $response, $args): Response
+  {
+
+    try {
+      $directory = PICTURES_REPOSITORY.'profiles\\'.$args['id'];
+      $stream = $this->streamFactory->createStreamFromFile($directory);
+      $extension = mb_split('.', $args['id']);
+      $ext = $extension[count($extension)-1];
+
+      return $response->withBody($stream)->withHeader('Content-Length', $stream->getSize())->withHeader('Content-Type', $ext);
+    } catch (\Exception $e) {
+      return ResponseFormatter::format($response, 500, ["Erreur lors de la récupération du fichier"]);
     }
-
-    public function getFile(Request $request, Response $response, array $args): Response
-    {
-        $fileModel = new File($this->db);
-        $file = $fileModel->find($args['id']);
-
-        if (!$file) {
-            return $this->errorResponse($response, 'Fichier non trouvé', 404);
-        }
-
-        try {
-            $stream = $this->storage->readStream($file['path']);
-            
-            $response = $response
-                ->withHeader('Content-Type', $file['mime_type'])
-                ->withHeader('Content-Length', $this->storage->fileSize($file['path']));
-            
-            $response->getBody()->write(stream_get_contents($stream));
-            fclose($stream);
-            
-            return $response;
-        } catch (\Exception $e) {
-            return $this->errorResponse($response, 'Erreur lors de la récupération du fichier', 500);
-        }
-    }
-
-    private function errorResponse(Response $response, string $message, int $code): Response
-    {
-        $response->getBody()->write(json_encode(['error' => $message]));
-        return $response
-            ->withStatus($code)
-            ->withHeader('Content-Type', 'application/json');
-    }
-
-    private function successResponse(Response $response, array $data): Response
-    {
-        $response->getBody()->write(json_encode($data));
-        return $response
-            ->withStatus(200)
-            ->withHeader('Content-Type', 'application/json');
-    }
+  }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Repositories\ParamsRepository;
 use App\Repositories\ProfileRepository;
 
 class ClaimJwt
@@ -17,12 +18,13 @@ class ClaimJwt
   public function setData(User $user, int $exp)
   {
     $profile = (new ProfileRepository())->getByUser($this->user->id);
+    $params = (new ParamsRepository())->getByUser($this->user->id);
     return [
       'userName' => $user->email,
       'userId' => $user->id,
       'role' => $user->role,
       'fullname' => $profile->firstname + " "+$profile->lastname,
-      'userlanguage' => $profile->userlanguage,
+      'userlanguage' => $params->userlanguage,
       'exp' => $exp
     ];
   }

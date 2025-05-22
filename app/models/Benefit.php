@@ -4,9 +4,9 @@ namespace App\Models;
 
 class Benefit
 {
-  public int $id;
-  public int $user_id;
-  public int $category_id;
+  public string $id;
+  public string $user_id;
+  public string $category_id;
   public string $title;
   public ?string $location;
   public ?string $description;
@@ -17,9 +17,9 @@ class Benefit
 
   public function __construct($data)
   {
-    $this->id = intval($data['id']);
-    $this->user_id = intval($data['user_id']);
-    $this->category_id = intval($data['category_id']);
+    $this->id = $data['id'];
+    $this->user_id = $data['user_id'];
+    $this->category_id = $data['category_id'];
     $this->title = $data['title'];
     $this->location = $data['location'];
     $this->description = $data['description'];

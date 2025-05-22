@@ -36,7 +36,7 @@ class ResponseFormatter
     ->withHeader('Content-Type', 'application/json');
     // ->withStatus($statusCode);
   }
-  public static function error(SlimResponse $response, int $statusCode=401, array $error=[], $data = null)
+  public static function error(Response $response, int $statusCode=401, array $error=[], $data = null)
   {
     
     $errors = [];
@@ -54,4 +54,22 @@ class ResponseFormatter
     ->withHeader('Content-Type', 'application/json');
     // ->withStatus($statusCode);
   }
+  // public static function error(SlimResponse $response, int $statusCode=401, array $error=[], $data = null)
+  // {
+    
+  //   $errors = [];
+  //   foreach($error as $err) {
+  //     array_push($errors, ["errorMessage"=>$err]);
+  //   }
+  //   $payload = [
+  //     'hasSucceeded' => false,
+  //     'status' => $statusCode,
+  //     'payload' => $data,
+  //     'errorMessages' => $errors
+  //   ];
+  //   $response->getBody()->write(json_encode($payload));
+  //   return $response
+  //   ->withHeader('Content-Type', 'application/json');
+  //   // ->withStatus($statusCode);
+  // }
 }

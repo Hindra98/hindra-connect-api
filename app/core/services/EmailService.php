@@ -42,7 +42,7 @@ class EmailService
     $reset_password_link = $base_url."oauth/reset-password?$message";
     $verify_email_link = $base_url."oauth/verify-registration?$message";
 
-    $render_template = ['welcome', 'reset_password', 'send_otp', 'verify_email'];
+    $render_template = ['welcome', 'reset_password', 'send_otp', 'verify_email', 'update_email'];
 
     // Rendre le template
     $template = $twig->render('emails/' . $render_template[$render] . '.html.twig', [
@@ -82,7 +82,7 @@ class EmailService
       $mail->AltBody = strip_tags($template);
 
       $mail->send();
-      $render_message = ['', 'Un lien de reinitialisation vous a été envoyé par mail !', 'Verifiez vos mails !', 'Un lien de validation vous a été envoyé par mail !'];
+      $render_message = ['', 'Un lien de reinitialisation vous a été envoyé par mail !', 'Verifiez vos mails !', 'Un lien de validation vous a été envoyé par mail !', 'Adresse email modifie avec succes'];
       return ['message_email' => $render_message[$render]];
     } catch (Exception $e) {
       return ['message_email' => "Le code n'a pas pu être envoyé. Renvoyez le mail \n Erreur : {$mail->ErrorInfo}."];

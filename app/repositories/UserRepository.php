@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Config\Database;
 use App\Models\User;
+use DateTime;
 
 class UserRepository
 {
@@ -21,7 +22,7 @@ class UserRepository
     $query = "SELECT * FROM \"$this->table\"";
     $stmt = $this->pdo->query($query);
     $results = $stmt->fetchAll() ?: null;
-    return array_map(fn($row) => new User($row), $results);
+    return $results == null ? [] : array_map(fn($row) => new User($row), $results);
   }
 
   public function getById($id)
@@ -67,13 +68,14 @@ class UserRepository
 
   public function update(User $user)
   {
-    $query = "UPDATE \"$this->table\" SET is_verified = :is_verified, is_verify_2fa = :is_verify_2fa, is_connected = :is_connected WHERE id = :id";
+    $query = "UPDATE \"$this->table\" SET is_verified = :is_verified, is_verify_2fa = :is_verify_2fa, is_connected = :is_connected, updated_at = :updated_at WHERE id = :id";
     $stmt = $this->pdo->prepare($query);
 
     $stmt->bindParam(":id", $user->id);
     $stmt->bindParam(":is_verified", $user->is_verified);
     $stmt->bindParam(":is_verify_2fa", $user->is_verify_2fa);
     $stmt->bindParam(":is_connected", $user->is_connected);
+    $stmt->bindParam(":updated_at", ((new DateTime())->__serialize())['date']);
 
     if ($stmt->execute()) {
       return true;
@@ -83,11 +85,12 @@ class UserRepository
 
   public function updateEmail(string $id, string $email)
   {
-    $query = "UPDATE  \"$this->table\" SET email = :email WHERE id = :id";
+    $query = "UPDATE  \"$this->table\" SET email = :email, updated_at = :updated_at WHERE id = :id";
     $stmt = $this->pdo->prepare($query);
 
     $stmt->bindParam(":id", $id);
     $stmt->bindParam(":email", $email);
+    $stmt->bindParam(":updated_at", ((new DateTime())->__serialize())['date']);
 
     if ($stmt->execute()) {
       return true;
@@ -95,13 +98,14 @@ class UserRepository
     return false;
   }
 
-  public function updateVerifyRegistration(string $id, bool $is_verified)
+  public function updateVerifyRegistration(string $id, int $is_verified)
   {
-    $query = "UPDATE  \"$this->table\" SET is_verified = :is_verified WHERE id = :id";
+    $query = "UPDATE  \"$this->table\" SET is_verified = :is_verified, updated_at = :updated_at WHERE id = :id";
     $stmt = $this->pdo->prepare($query);
 
     $stmt->bindParam(":id", $id);
     $stmt->bindParam(":is_verified", $is_verified);
+    $stmt->bindParam(":updated_at", ((new DateTime())->__serialize())['date']);
 
     if ($stmt->execute()) {
       return true;
@@ -109,13 +113,14 @@ class UserRepository
     return false;
   }
 
-  public function updateUserConnected(string $id, bool $is_connected)
+  public function updateUserConnected(string $id, int $is_connected)
   {
-    $query = "UPDATE  \"$this->table\" SET is_connected = :is_connected WHERE id = :id";
+    $query = "UPDATE  \"$this->table\" SET is_connected = :is_connected, updated_at = :updated_at WHERE id = :id";
     $stmt = $this->pdo->prepare($query);
 
     $stmt->bindParam(":id", $id);
     $stmt->bindParam(":is_connected", $is_connected);
+    $stmt->bindParam(":updated_at", ((new DateTime())->__serialize())['date']);
 
     if ($stmt->execute()) {
       return true;
@@ -125,11 +130,12 @@ class UserRepository
 
   public function updatePassword(string $id, string $password)
   {
-    $query = "UPDATE \"$this->table\" SET password = :password WHERE id = :id";
+    $query = "UPDATE \"$this->table\" SET password = :password, updated_at = :updated_at WHERE id = :id";
     $stmt = $this->pdo->prepare($query);
 
     $stmt->bindParam(":id", $id);
     $stmt->bindParam(":password", $password);
+    $stmt->bindParam(":updated_at", ((new DateTime())->__serialize())['date']);
 
     if ($stmt->execute()) {
       return true;
@@ -139,11 +145,11 @@ class UserRepository
 
   public function updateOTP(string $id, string $otp)
   {
-    $query = "UPDATE \"$this->table\" SET otp = :otp WHERE id = :id";
+    $query = "UPDATE \"$this->table\" SET otp = :otp, updated_at = :updated_at WHERE id = :id";
     $stmt = $this->pdo->prepare($query);
-
     $stmt->bindParam(":id", $id);
     $stmt->bindParam(":otp", $otp);
+    $stmt->bindParam(":updated_at", ((new DateTime())->__serialize())['date']);
 
     if ($stmt->execute()) {
       return true;

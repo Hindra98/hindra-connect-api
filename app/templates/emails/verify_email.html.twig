@@ -1,8 +1,8 @@
 {# templates/emails/verify_email.html.twig #}
 {% extends 'layouts/base.html.twig' %}
 
-  {% block content %}
-    <h1>{{ 'verify_email_title'|trans }}</h1>
-    <p>{{ 'verify_email_message'|trans }}<a href="{{verify_email_link}}">{{verify_email_link}}</a></p>
-  {% endblock %}
-  
+{% block content %}
+	<h1>{{ 'verify_email_title'|trans }}</h1>
+	<p>{{ 'verify_email_message'|trans }}<a href="{{verify_email_link}}">{{verify_email_link}}</a>
+	</p>
+{% endblock %}

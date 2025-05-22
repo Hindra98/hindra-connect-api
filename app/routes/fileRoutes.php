@@ -7,18 +7,11 @@ use Slim\Routing\RouteCollectorProxy;
 
 return function (App $app) {
 
-  $app->group('/api', function (RouteCollectorProxy $group) {
-    $group->get('/files', [BenefitController::class, 'getAll']);
-    $group->get('/files/{id}', [BenefitController::class, 'getOne']);
-    $group->post('/files', [BenefitController::class, 'create']);
-    $group->put('/files', [BenefitController::class, 'update']);
-    $group->delete('/files/{id}', [BenefitController::class, 'delete']);
-  });
 
   // Routes protégées
 $app->group('/api', function ($group) {
   // Upload de fichier
-  $group->post('/upload', [FileController::class, 'upload']);
+  $group->post('/update-picture', [FileController::class, 'updatePicture']);
   
   // Récupération de fichier
   $group->get('/files/{id}', [FileController::class, 'getFile']);

@@ -8,3 +8,7 @@ reset_password_message: "Cliquez sur ce lien pour réinitialiser votre mot de pa
 verify_email_title: "Validation de votre compte"
 verify_email_message: "Cliquez sur ce lien pour valider et terminer votre enregistrement sur notre plateforme :"
 footer_message: "Cordialement, l'équipe de support."
+
+update_email_title: "Modification de votre adresse email"
+update_email_message: "Vous vous connecterez desormais via cette adresse email et vous recevrez aussi vos notifications via ce canal :"
+

@@ -12,8 +12,9 @@ class Profile
   public ?string $phone;
   public ?string $google;
   public ?string $linkedin;
+  public ?string $website;
+  public ?string $github;
   public ?string $gender;
-  public ?string $userlanguage;
   public string $updated_at;
 
   public function __construct(array $data)
@@ -25,9 +26,10 @@ class Profile
     $this->picture = $data['picture'] ?? null;
     $this->phone = $data['phone'] ?? null;
     $this->linkedin = $data['linkedin'] ?? null;
+    $this->website = $data['website'] ?? null;
+    $this->github = $data['github'] ?? null;
     $this->google = $data['google'] ?? null;
     $this->gender = $data['gender'] ?? null;
-    $this->userlanguage = $data['userlanguage'] ?? "fr";
     $this->updated_at = $data['updated_at'] ?? time();
   }
 }

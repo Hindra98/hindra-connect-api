@@ -41,7 +41,7 @@ class LoggerApi
     }
     if ($level == Level::Info) {
       $this->getDebug($request, $options);
-      return $this->log->error($message, $context);
+      return $this->log->info($message, $context);
     }
     return $this->log->debug($message, $context);
   }
