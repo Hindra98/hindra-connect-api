@@ -1,29 +1,40 @@
-# Dockerfile
+# Dockerfile pour un projet PHP avec Slim Framework
+# Image PHP officielle avec Apache
 FROM php:8.2-apache
 
-# Activer mod_rewrite pour Slim
+# Active mod_rewrite pour Slim
 RUN a2enmod rewrite
 
-# Installer Composer
+# Installe les outils nécessaires
+RUN apt-get update && apt-get install -y \
+    zip \
+    unzip \
+    git \
+    libzip-dev \
+    libonig-dev \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    libxml2-dev \
+    && docker-php-ext-install pdo pdo_mysql zip
+
+# Installe Composer
 COPY --from=composer:2.6 /usr/bin/composer /usr/bin/composer
 
-# Définir le répertoire de travail
+# Copie le projet dans le conteneur
+COPY . /var/www/html
+
+# Positionne le dossier de travail
 WORKDIR /var/www/html
 
-# Copier les fichiers de l'application dans le conteneur
-COPY . .
-
-# Installer les dépendances PHP
+# Installe les dépendances PHP (production)
 RUN composer install --no-dev --optimize-autoloader
 
-# Définir les permissions
-RUN chown -R www-data:www-data /var/www/html
-
-# Copier la configuration Apache personnalisée
+# Copie la config Apache personnalisée
 COPY apache.conf /etc/apache2/sites-available/000-default.conf
 
-# Exposer le port utilisé par Apache
-EXPOSE 80
+# Droits sur les fichiers
+RUN chown -R www-data:www-data /var/www/html
 
-# Lancer Apache en mode foreground
-CMD ["apache2-foreground"]
+# Expose le port HTTP
+EXPOSE 80
