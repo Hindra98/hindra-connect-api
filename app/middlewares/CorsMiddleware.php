@@ -31,7 +31,8 @@ class CorsMiddleware
       'http://192.168.137.154:5173',        // React en développement mais virtuellement accessible
       'http://192.168.137.4:5173',        // React en développement mais virtuellement accessible
       'https://hindra-exchange-service.vercel.app/',     // Votre domaine en production sur Vercel
-      'https://hindra-exchange-service.pages.dev/'     // Votre domaine en production sur CloudFlare
+      'https://hindra-exchange-service.pages.dev/',     // Votre domaine en production sur CloudFlare
+      'https://hindra-connect-api.onrender.com/',     // Votre domaine en production sur Render
     ];
 
     // $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
