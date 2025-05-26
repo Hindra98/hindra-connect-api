@@ -12,7 +12,7 @@ return function (App $app) {
     $group->get('/my-profile', [ProfileController::class, 'getOne']);
     $group->post('/update-profile', [ProfileController::class, 'updateProfile']);
     $group->post('/update-phone', [ProfileController::class, 'updatePhone']);
-    // $group->post('/update-picture', [ProfileController::class, 'updatePicture']);
+    $group->post('/update-picture', [ProfileController::class, 'updatePicture']);
     $group->post('/update-website', [ProfileController::class, 'updateWebsite']);
     $group->delete('/profile', [ProfileController::class, 'delete']);
   });

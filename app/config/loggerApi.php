@@ -8,6 +8,10 @@ use Monolog\Level;
 use Monolog\Logger;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
+/**
+ * Summary of LoggerApi
+ * Enregistrement de donnees lors d'une persistance en base de donnees
+ */
 class LoggerApi
 {
   private $log;

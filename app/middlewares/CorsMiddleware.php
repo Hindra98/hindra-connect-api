@@ -39,13 +39,13 @@ class CorsMiddleware
     $origin = $request->getHeaderLine('Origin');
     $origin = in_array($origin, $allowedOrigins) ? $origin : $allowedOrigins[0];
     // $origin = '*'; // Autoriser toutes les origines (pour le développement uniquement)
-    if (in_array($origin, $allowedOrigins))
-      return $response
-        ->withHeader('Access-Control-Allow-Origin', $origin)
-        ->withHeader('Access-Control-Allow-Headers', 'X-Requested-With, User-Agent, Cookie, Accept-Language, X-Api-Key, X-Correlation-Id, Content-Type, Content-Length, Accept, Origin, Authorization, Set-Cookie, Cookie, Refresh-Token, New-Access-Token')
-        ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS')
-        ->withHeader('Access-Control-Allow-Credentials', 'true')
-        ->withHeader('Access-Control-Max-Age', '86400'); // Cache pendant 24h
+    // if (in_array($origin, $allowedOrigins))
+    //   return $response
+    //     ->withHeader('Access-Control-Allow-Origin', $origin)
+    //     ->withHeader('Access-Control-Allow-Headers', 'X-Requested-With, User-Agent, Cookie, Accept-Language, X-Api-Key, X-Correlation-Id, Content-Type, Content-Length, Accept, Origin, Authorization, Set-Cookie, Cookie, Refresh-Token, New-Access-Token')
+    //     ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS')
+    //     ->withHeader('Access-Control-Allow-Credentials', 'true')
+    //     ->withHeader('Access-Control-Max-Age', '86400'); // Cache pendant 24h
     return $response;
   }
 }

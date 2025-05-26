@@ -11,7 +11,7 @@ return function (App $app) {
   // Routes protégées
 $app->group('/api', function ($group) {
   // Upload de fichier
-  $group->post('/update-picture', [FileController::class, 'updatePicture']);
+  $group->post('/update-picture', [FileController::class, 'updatePictureInFiles']);
   
   // Récupération de fichier
   $group->get('/files/{id}', [FileController::class, 'getFile']);

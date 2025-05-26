@@ -9,7 +9,7 @@ use Slim\Factory\AppFactory;
 
 $app ??= AppFactory::create();
 // Appliquer le middleware CORS globalement
-$app->add(new CorsMiddleware());
+// $app->add(new CorsMiddleware());
 $app->setBasePath("/api-exchange");
 
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);

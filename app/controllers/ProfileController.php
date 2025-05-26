@@ -44,7 +44,6 @@ class ProfileController
 
     return ResponseFormatter::format($response, $status, $error, $payload);
   }
-
   public function getAllProfileDatas(Request $_, Response $response, $args)
   {
     $error = [];
@@ -196,7 +195,7 @@ class ProfileController
   {
 
     $error = [];
-    $status = 200;
+    $status = 500;
     $payload = ["message" => ""];
     $jwtCore = new JWTCore();
 
@@ -213,27 +212,42 @@ class ProfileController
     $user = $this->userModel->getById($id);
     if ($user == null) return ResponseFormatter::format($response, 401, ["Token d'authentification compromis! Reessayez de vous connecter!"], $payload);
 
+    $uploadedFiles = $request->getUploadedFiles();
     $parsedBody = $request->getParsedBody();
-    $photoFile = $parsedBody['picture'] ?? "";
 
-    if (strlen($photoFile) < 0) array_push($error, "Vous devez renseigner un numero de telepicture valide");
+    $photoFile = $uploadedFiles['picture'];
+    $fileType = $parsedBody['destination'] ?? '';
+
+    if (empty($uploadedFiles['picture'])) array_push($error, "Aucun fichier uploadé");
+    if (!in_array($fileType, ['profile', 'benefit', 'service', 'temp'])) array_push($error, "Une erreur est survenue lors de la modification de votre profil");
 
     if (count($error) == 0) {
       $fileUploader = new FileUploader();
       $profile = $this->profileModel->getByUser($user->id);
-      $picture = $fileUploader->upload($photoFile, PICTURES_REPOSITORY);
-      $data = ['picture' => $picture];
-      $updateProfileUser = $this->profileModel->updatePicture($profile->id, $picture);
-      if ($updateProfileUser) {
-        $accessToken = $jwtCore->generateTokenWithClaims($user, 900); // 15 min
-        $payload = ['token' => $accessToken, "message" => "Photo de profil modifiée avec succès"];
-        $payload = array_merge($payload, $data);
-        $status = 200;
-      } else array_push($error, "Erreur lors de la modification de votre photo de profil");
+
+      try {
+        $directory = PICTURES_REPOSITORY . $fileType . 's'; // profiles/ ou benefits/
+
+        $uploadFile = $fileUploader->upload($request, $photoFile, $directory, $fileType[0] . '-' . $id);
+        if (!$uploadFile['isValid']) return ResponseFormatter::format($response, 500, [$uploadFile['error']], null);
+        $picture = $uploadFile['payload'];
+        $data = ['picture' => $picture];
+        $updateProfileUser = $this->profileModel->updatePicture($profile->id, $picture);
+
+        if ($updateProfileUser) {
+          $accessToken = $jwtCore->generateTokenWithClaims($user, 900); // 15 min
+          $payload = ['token' => $accessToken, "message" => "Photo de profil modifiée avec succès"];
+          $payload = array_merge($payload, $data);
+          $status = 200;
+          $this->logger->getInfo($request);
+        } else array_push($error, "Erreur lors de la modification de votre photo de profil");
+        return ResponseFormatter::format($response, $status, $error, $payload);
+      } catch (\Exception $e) {
+        return ResponseFormatter::format($response, 500, ["Erreur lors du traitement du fichier: " . $e->getMessage()], $payload);
+      }
     } else $status = 401;
     return ResponseFormatter::format($response, $status, $error, $payload);
   }
-
   public function updateWebsite(Request $request, Response $response, $_)
   {
 
@@ -277,7 +291,6 @@ class ProfileController
     } else $status = 401;
     return ResponseFormatter::format($response, $status, $error, $payload);
   }
-
   public function delete(Request $_, Response $response, $args)
   {
     $error = [];
