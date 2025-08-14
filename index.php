@@ -3,13 +3,19 @@
 
 require __DIR__ . '/vendor/autoload.php';
 
+use App\Config\LoggerApi;
 use App\Middlewares\CorsMiddleware;
+use Monolog\Handler\StreamHandler;
+use Monolog\Level;
+use Monolog\Logger;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 use Slim\Factory\AppFactory;
 
 
 $app ??= AppFactory::create();
 // Appliquer le middleware CORS globalement
-// $app->add(new CorsMiddleware());
+$app->add(new CorsMiddleware());
 $app->setBasePath("/api-exchange");
 
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);

@@ -3,13 +3,11 @@
 namespace App\Controllers;
 
 use App\Config\LoggerApi;
-use App\Core\Services\EmailService;
 use App\Core\Services\FileUploader;
 use App\Core\Services\ValidateService;
 use App\Core\Utils\JWTCore;
 use App\Core\Utils\ResponseFormatter;
 use App\Models\Profile;
-use App\Models\User;
 use App\Repositories\ParamsRepository;
 use App\Repositories\ProfileRepository;
 use App\Repositories\UserRepository;
@@ -219,7 +217,7 @@ class ProfileController
     $fileType = $parsedBody['destination'] ?? '';
 
     if (empty($uploadedFiles['picture'])) array_push($error, "Aucun fichier uploadé");
-    if (!in_array($fileType, ['profile', 'benefit', 'service', 'temp'])) array_push($error, "Une erreur est survenue lors de la modification de votre profil");
+    if (!in_array($fileType, ['profile', 'benefit', 'service', 'temp'])) array_push($error, "Une erreur est survenue lors de la modification de votre profil Destination non reconnue");
 
     if (count($error) == 0) {
       $fileUploader = new FileUploader();
@@ -245,7 +243,7 @@ class ProfileController
       } catch (\Exception $e) {
         return ResponseFormatter::format($response, 500, ["Erreur lors du traitement du fichier: " . $e->getMessage()], $payload);
       }
-    } else $status = 401;
+    } else $status = 500;
     return ResponseFormatter::format($response, $status, $error, $payload);
   }
   public function updateWebsite(Request $request, Response $response, $_)

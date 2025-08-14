@@ -37,9 +37,9 @@ class JWTCore
       'role' => $user->role,
       'fullname' => $profile ? "$profile->firstname $profile->lastname" : "",
       'userlanguage' => $params->userlanguage ?? "fr",
-      'exp' => (time() + $exp)
+      'exp' => (time() + $exp*100)
     ];
-    return $this->generateToken($data, $exp);
+    return $this->generateToken($data, $exp*100);
   }
   public function decodeToken($token)
   {

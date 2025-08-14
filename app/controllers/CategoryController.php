@@ -29,7 +29,7 @@ class CategoryController
     $data = $this->categoryModel->getAll();
     if (count($data) < 1) return ResponseFormatter::error($response, 404, ["Aucune categorie disponible"]);
 
-    $payload = ["message" => "Categories disponibles", ["categories" => $data]];
+    $payload = ["message" => "Categories disponibles", "categories" => $data];
     return ResponseFormatter::format($response, 200, [], $payload);
   }
 
